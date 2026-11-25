@@ -1,6 +1,6 @@
 # kompas-mcp 1.0.0 — справочник инструментов
 
-Файл сформирован командой `KompasMcp.exe --tools-md docs\tools.md` из реестра сервера: описания и параметры совпадают с тем, что получает MCP-клиент в `tools/list`. Всего инструментов: 86.
+Файл сформирован командой `KompasMcp.exe --tools-md docs\tools.md` из реестра сервера: описания и параметры совпадают с тем, что получает MCP-клиент в `tools/list`. Всего инструментов: 87.
 
 Единицы: длины — мм, углы — градусы, силы — Н, моменты — Н·м, напряжения — МПа. Пути — абсолютные или относительно папки сервера; результаты по умолчанию — в `mcp-out` рядом с exe.
 
@@ -8,7 +8,7 @@
 
 - **Инфраструктура** — [`ping`](#ping), [`kompas_status`](#kompas_status), [`kompas_start`](#kompas_start), [`kompas_show`](#kompas_show), [`kompas_stop`](#kompas_stop), [`list_open_documents`](#list_open_documents)
 - **2D-чертежи** — [`create_drawing`](#create_drawing), [`create_view`](#create_view), [`line`](#line), [`circle`](#circle), [`circle_array`](#circle_array), [`arc`](#arc), [`polyline`](#polyline), [`text`](#text), [`lin_dim`](#lin_dim), [`diam_dim`](#diam_dim), [`rad_dim`](#rad_dim), [`ang_dim`](#ang_dim), [`hatch`](#hatch), [`rough`](#rough), [`fill_stamp`](#fill_stamp), [`tech_demands`](#tech_demands), [`save_document`](#save_document), [`render_png`](#render_png), [`cut_line`](#cut_line), [`dim_group`](#dim_group), [`export_dxf`](#export_dxf), [`gear_drawing`](#gear_drawing), [`close_drawing`](#close_drawing)
-- **3D-детали и сборки** — [`part_variables`](#part_variables), [`set_part_variable`](#set_part_variable), [`inspect_round_openings`](#inspect_round_openings), [`assembly_inspect`](#assembly_inspect), [`assembly_add_mate`](#assembly_add_mate), [`assembly_set_fixed`](#assembly_set_fixed), [`assembly_rotate`](#assembly_rotate), [`assembly_clearance`](#assembly_clearance), [`create_part`](#create_part), [`open_part`](#open_part), [`sketch`](#sketch), [`extrude_boss`](#extrude_boss), [`extrude_cut`](#extrude_cut), [`revolve_boss`](#revolve_boss), [`revolve_cut`](#revolve_cut), [`hole`](#hole), [`fillet`](#fillet), [`chamfer`](#chamfer), [`set_material`](#set_material), [`mass_properties`](#mass_properties), [`rebuild`](#rebuild), [`save_part`](#save_part), [`close_part`](#close_part), [`render_png_3d`](#render_png_3d), [`create_assembly`](#create_assembly), [`open_assembly`](#open_assembly), [`assembly_add_component`](#assembly_add_component), [`assembly_components`](#assembly_components), [`assembly_place`](#assembly_place)
+- **3D-детали и сборки** — [`part_variables`](#part_variables), [`set_part_variable`](#set_part_variable), [`inspect_round_openings`](#inspect_round_openings), [`check_round_part`](#check_round_part), [`assembly_inspect`](#assembly_inspect), [`assembly_add_mate`](#assembly_add_mate), [`assembly_set_fixed`](#assembly_set_fixed), [`assembly_rotate`](#assembly_rotate), [`assembly_clearance`](#assembly_clearance), [`create_part`](#create_part), [`open_part`](#open_part), [`sketch`](#sketch), [`extrude_boss`](#extrude_boss), [`extrude_cut`](#extrude_cut), [`revolve_boss`](#revolve_boss), [`revolve_cut`](#revolve_cut), [`hole`](#hole), [`fillet`](#fillet), [`chamfer`](#chamfer), [`set_material`](#set_material), [`mass_properties`](#mass_properties), [`rebuild`](#rebuild), [`save_part`](#save_part), [`close_part`](#close_part), [`render_png_3d`](#render_png_3d), [`create_assembly`](#create_assembly), [`open_assembly`](#open_assembly), [`assembly_add_component`](#assembly_add_component), [`assembly_components`](#assembly_components), [`assembly_place`](#assembly_place)
 - **Расчёты и справочники** — [`material_library`](#material_library), [`material_lookup`](#material_lookup), [`fit_calc`](#fit_calc), [`tolerance_it`](#tolerance_it), [`section_properties`](#section_properties)
 - **Стандартные изделия** — [`std_part`](#std_part)
 - **Цилиндрические зубчатые передачи** — [`gear_calc`](#gear_calc), [`gear_wheel`](#gear_wheel), [`gear_pair`](#gear_pair)
@@ -376,6 +376,16 @@
 Измерить круглые внутренние контуры плоских граней, ограниченные одним кольцевым ребром и смежной цилиндрической стенкой. Группировка по стенке, центры в системе модели, размеры в мм.
 
 Параметров нет.
+
+### check_round_part
+
+Проверить одно тело, габариты XYZ и набор цилиндрических стенок с двумя круглыми торцами. Для каждой стенки задайте имя, диаметр, центры торцов и типы контуров в том же порядке. Размеры в мм. При расхождении возвращает ошибку с измерениями.
+
+| Параметр | Тип | Обяз. | Описание |
+|---|---|---|---|
+| `size_mm` | array of number | да |  |
+| `tolerance_mm` | number | да |  |
+| `walls` | array of object | да |  |
 
 ### assembly_inspect
 
