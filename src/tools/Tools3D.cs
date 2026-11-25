@@ -37,6 +37,7 @@ namespace KompasMcp.Tools
     public static void Register()
     {
       PartInspection.Register();
+      AssemblyMates.Register();
       ToolRegistry.Add("create_part",
         "Создать новую деталь (3D). Становится активной для остальных 3D-tools.",
         @"{""type"":""object"",""properties"":{
@@ -208,10 +209,11 @@ namespace KompasMcp.Tools
         a => ComponentsList());
 
       ToolRegistry.Add("assembly_place",
-        "Разместить компонент сборки: положение (x,y,z) и поворот вокруг глобальной оси Z (град). Компонент — по name (как в assembly_components) или index.",
+        "Разместить компонент в системе родителя. Выберите occurrence из assembly_inspect, уникальное name или index. Задайте поворот вокруг Z (angle) либо обе ортонормированные оси x_axis и y_axis.",
         @"{""type"":""object"",""properties"":{
 ""name"":{""type"":""string"",""description"":""Имя компонента (без index)""},
 ""index"":{""type"":""integer"",""description"":""Индекс компонента в сборке (с 0)""},
+""occurrence"":{""type"":""string""},""x_axis"":{""type"":""array"",""items"":{""type"":""number""},""minItems"":3,""maxItems"":3},""y_axis"":{""type"":""array"",""items"":{""type"":""number""},""minItems"":3,""maxItems"":3},
 ""x"":{""type"":""number""},""y"":{""type"":""number""},""z"":{""type"":""number""},
 ""angle"":{""type"":""number"",""description"":""Поворот вокруг Z, град. (по умолчанию 0)""}}}",
         a => PlaceComponent(a));
@@ -241,6 +243,7 @@ namespace KompasMcp.Tools
       if (slot == null) throw new ToolException("GetPart(pNew_Part) вернул null (не сборка?)");
       bool ok = GetDoc3D().SetPartFromFile(path, slot, external);
       if (!ok) throw new ToolException("SetPartFromFile вернул false: " + path);
+      SetOpaque(slot);
       return slot;
     }
 
@@ -249,10 +252,11 @@ namespace KompasMcp.Tools
       string path = ToolRegistry.GetStr(a, "path");
       if (path == null) throw new ToolException("Нет path (.m3d/.a3d компонента)");
       bool external = ToolRegistry.GetBool(a, "external", false);
-      AddComponentImpl(path, external);
-      try { GetPart().RebuildModel(); } catch (Exception e) { Log.Error("assembly rebuild", e); }
+      var inserted = AddComponentImpl(path, external);
+      AssemblyMates.Rebuild();
       Dictionary<string, object> res = (Dictionary<string, object>)ComponentsList();
       res["added"] = path;
+      res["occurrence"] = AssemblyMates.OccurrenceOf(inserted);
       return res;
     }
 
@@ -260,13 +264,25 @@ namespace KompasMcp.Tools
 
     static ksPart FindComponent(Dictionary<string, object> a)
     {
+      if (a.ContainsKey("occurrence")) {
+        string id = ToolRegistry.GetStr(a, "occurrence");
+        if (id == "root" || a.ContainsKey("name") || a.ContainsKey("index"))
+          throw new ToolException("Выберите одно вхождение");
+        return AssemblyMates.Api5(AssemblyMates.Resolve(id));
+      }
       ksPartCollection col = (ksPartCollection)GetDoc3D().PartCollection(true);
       if (col == null) throw new ToolException("PartCollection вернул null");
       object nameObj;
       if (a.TryGetValue("name", out nameObj) && nameObj != null)
       {
         string name = ToolRegistry.GetStr(a, "name");
-        ksPart p = (ksPart)col.GetByName(name, false, true);
+        ksPart p = null;
+        for (int i=0; i<col.GetCount(); i++) {
+          var candidate = (ksPart)col.GetByIndex(i);
+          if (!String.Equals(candidate.name, name, StringComparison.OrdinalIgnoreCase)) continue;
+          if (p != null) throw new ToolException("Имя неоднозначно. Выберите occurrence из assembly_inspect: " + name);
+          p = candidate;
+        }
         if (p == null) throw new ToolException("Компонент не найден по имени: " + name);
         return p;
       }
@@ -333,17 +349,35 @@ namespace KompasMcp.Tools
     static object PlaceComponent(Dictionary<string, object> a)
     {
       ksPart c = FindComponent(a);
-      PlacePart(c,
-        ToolRegistry.GetDbl(a, "x", 0),
-        ToolRegistry.GetDbl(a, "y", 0),
-        ToolRegistry.GetDbl(a, "z", 0),
-        ToolRegistry.GetDbl(a, "angle", 0));
-      try { GetPart().RebuildModel(); } catch (Exception e) { Log.Error("assembly rebuild", e); }
+      double x=ToolRegistry.GetDbl(a, "x", 0), y=ToolRegistry.GetDbl(a, "y", 0), z=ToolRegistry.GetDbl(a, "z", 0);
+      if (a.ContainsKey("x_axis") || a.ContainsKey("y_axis")) {
+        if (a.ContainsKey("angle")) throw new ToolException("Выберите либо angle, либо пару осей");
+        var ox = ReadUnitAxis(a, "x_axis"); var oy = ReadUnitAxis(a, "y_axis");
+        if (Math.Abs(ox[0]*oy[0]+ox[1]*oy[1]+ox[2]*oy[2]) > 1e-7) throw new ToolException("Оси должны быть перпендикулярны");
+        PlacePartAxes(c, new[] { x,y,z }, ox, oy);
+      } else PlacePart(c, x,y,z, ToolRegistry.GetDbl(a, "angle", 0));
+      AssemblyMates.Rebuild();
       Dictionary<string, object> res = (Dictionary<string, object>)ComponentsList();
       string nm = "?";
       try { nm = c.name; } catch { }
       res["placed"] = nm;
+      if (a.ContainsKey("occurrence")) {
+        string id = ToolRegistry.GetStr(a, "occurrence");
+        res["occurrence"] = id;
+        res["pose"] = AssemblyMates.Pose(AssemblyMates.Resolve(id));
+      }
       return res;
+    }
+
+    static double[] ReadUnitAxis(Dictionary<string, object> args, string name)
+    {
+      object value;
+      var items = args.TryGetValue(name, out value) ? value as List<object> : null;
+      if (items == null || items.Count != 3) throw new ToolException("Нужны три координаты " + name);
+      var axis = items.ConvertAll(ToolRegistry.Number).ToArray();
+      double norm = axis[0]*axis[0]+axis[1]*axis[1]+axis[2]*axis[2];
+      if (Double.IsNaN(norm) || Math.Abs(norm-1) > 1e-7) throw new ToolException("Нужен единичный вектор " + name);
+      return axis;
     }
 
     internal class ComponentInfo
@@ -480,7 +514,18 @@ namespace KompasMcp.Tools
       Activate(KompasHost.App7.Documents.Add(DocumentTypeEnum.ksDocumentPart, true),
         Paths.Abs(ToolRegistry.GetStr(a, "path", Paths.Out("part.m3d"))));
       SetIdentity(a);
+      SetOpaque(part);
       return new Dictionary<string, object> { { "created", true }, { "name", part.name } };
+    }
+
+    static void SetOpaque(ksPart target)
+    {
+      int color;
+      double ambient, diffuse, specularity, shininess, transparency, emission;
+      if (!target.GetAdvancedColor(out color, out ambient, out diffuse, out specularity, out shininess,
+                                  out transparency, out emission) ||
+          !target.SetAdvancedColor(color, ambient, diffuse, specularity, shininess, 1.0, emission))
+        throw new ToolException("Не удалось задать непрозрачность детали");
     }
 
     internal static object OpenPart(string path)
