@@ -1,3 +1,4 @@
+param([string]$OutputDirectory = $PSScriptRoot)
 $ErrorActionPreference = "Stop"
 $dir   = $PSScriptRoot
 $csc   = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
@@ -14,7 +15,8 @@ if (-not (Test-Path (Join-Path $libDir "Kompas6API5.dll"))) {
   }
 }
 
-$out = Join-Path $dir "KompasMcp.exe"
+$outputDir = (New-Item -ItemType Directory -Path $OutputDirectory -Force).FullName
+$out = Join-Path $outputDir "KompasMcp.exe"
 # библиотека КОМПАСа «Давинчи» (davinci\src) собирается отдельно — davinci\build-native.ps1 —
 # и в сервер не входит: тянет interop KompasLibrary.dll
 $sources = Get-ChildItem -Recurse (Join-Path $dir "src") -Filter *.cs | ForEach-Object { $_.FullName }
@@ -38,11 +40,11 @@ if ($LASTEXITCODE -ne 0) { throw "csc failed: $LASTEXITCODE" }
 # аватар рядом с exe (шапка панели чата)
 foreach ($n in @("avatar.png","avatar.ico")) {
   $src = Join-Path $dir ("davinci\" + $n)
-  if (Test-Path $src) { Copy-Item $src $dir -Force }
+  if (Test-Path $src) { Copy-Item $src $outputDir -Force }
 }
 
 # interop-DLL должны лежать рядом с exe
 foreach ($n in @("Kompas6API5.dll","KompasAPI7.dll","Kompas6Constants.dll","Kompas6Constants3D.dll","KAPITypes.dll")) {
-  Copy-Item (Join-Path $libDir $n) $dir -Force
+  Copy-Item (Join-Path $libDir $n) $outputDir -Force
 }
 Write-Host "BUILD OK: $out"

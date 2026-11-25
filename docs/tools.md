@@ -1,6 +1,6 @@
 # kompas-mcp 1.0.0 — справочник инструментов
 
-Файл сформирован командой `KompasMcp.exe --tools-md docs\tools.md` из реестра сервера: описания и параметры совпадают с тем, что получает MCP-клиент в `tools/list`. Всего инструментов: 78.
+Файл сформирован командой `KompasMcp.exe --tools-md docs\tools.md` из реестра сервера: описания и параметры совпадают с тем, что получает MCP-клиент в `tools/list`. Всего инструментов: 81.
 
 Единицы: длины — мм, углы — градусы, силы — Н, моменты — Н·м, напряжения — МПа. Пути — абсолютные или относительно папки сервера; результаты по умолчанию — в `mcp-out` рядом с exe.
 
@@ -8,7 +8,7 @@
 
 - **Инфраструктура** — [`ping`](#ping), [`kompas_status`](#kompas_status), [`kompas_start`](#kompas_start), [`kompas_show`](#kompas_show), [`kompas_stop`](#kompas_stop), [`list_open_documents`](#list_open_documents)
 - **2D-чертежи** — [`create_drawing`](#create_drawing), [`create_view`](#create_view), [`line`](#line), [`circle`](#circle), [`circle_array`](#circle_array), [`arc`](#arc), [`polyline`](#polyline), [`text`](#text), [`lin_dim`](#lin_dim), [`diam_dim`](#diam_dim), [`rad_dim`](#rad_dim), [`ang_dim`](#ang_dim), [`hatch`](#hatch), [`rough`](#rough), [`fill_stamp`](#fill_stamp), [`tech_demands`](#tech_demands), [`save_document`](#save_document), [`render_png`](#render_png), [`cut_line`](#cut_line), [`dim_group`](#dim_group), [`export_dxf`](#export_dxf), [`gear_drawing`](#gear_drawing), [`close_drawing`](#close_drawing)
-- **3D-детали и сборки** — [`create_part`](#create_part), [`open_part`](#open_part), [`sketch`](#sketch), [`extrude_boss`](#extrude_boss), [`extrude_cut`](#extrude_cut), [`revolve_boss`](#revolve_boss), [`revolve_cut`](#revolve_cut), [`hole`](#hole), [`fillet`](#fillet), [`chamfer`](#chamfer), [`set_material`](#set_material), [`mass_properties`](#mass_properties), [`rebuild`](#rebuild), [`save_part`](#save_part), [`close_part`](#close_part), [`render_png_3d`](#render_png_3d), [`create_assembly`](#create_assembly), [`open_assembly`](#open_assembly), [`assembly_add_component`](#assembly_add_component), [`assembly_components`](#assembly_components), [`assembly_place`](#assembly_place)
+- **3D-детали и сборки** — [`part_variables`](#part_variables), [`set_part_variable`](#set_part_variable), [`inspect_round_openings`](#inspect_round_openings), [`create_part`](#create_part), [`open_part`](#open_part), [`sketch`](#sketch), [`extrude_boss`](#extrude_boss), [`extrude_cut`](#extrude_cut), [`revolve_boss`](#revolve_boss), [`revolve_cut`](#revolve_cut), [`hole`](#hole), [`fillet`](#fillet), [`chamfer`](#chamfer), [`set_material`](#set_material), [`mass_properties`](#mass_properties), [`rebuild`](#rebuild), [`save_part`](#save_part), [`close_part`](#close_part), [`render_png_3d`](#render_png_3d), [`create_assembly`](#create_assembly), [`open_assembly`](#open_assembly), [`assembly_add_component`](#assembly_add_component), [`assembly_components`](#assembly_components), [`assembly_place`](#assembly_place)
 - **Расчёты и справочники** — [`material_library`](#material_library), [`material_lookup`](#material_lookup), [`fit_calc`](#fit_calc), [`tolerance_it`](#tolerance_it), [`section_properties`](#section_properties)
 - **Стандартные изделия** — [`std_part`](#std_part)
 - **Цилиндрические зубчатые передачи** — [`gear_calc`](#gear_calc), [`gear_wheel`](#gear_wheel), [`gear_pair`](#gear_pair)
@@ -354,6 +354,28 @@
 Параметров нет.
 
 ## 3D-детали и сборки
+
+### part_variables
+
+Переменные верхнего уровня текущей 3D-модели.
+
+Параметров нет.
+
+### set_part_variable
+
+Изменить независимую числовую переменную текущей 3D-модели, проверить прежнее значение и перестроить. Сохранение отдельной командой.
+
+| Параметр | Тип | Обяз. | Описание |
+|---|---|---|---|
+| `name` | string | да |  |
+| `expected` | number | да |  |
+| `value` | number | да |  |
+
+### inspect_round_openings
+
+Измерить круглые внутренние контуры плоских граней, ограниченные одним кольцевым ребром и смежной цилиндрической стенкой. Группировка по стенке, центры в системе модели, размеры в мм.
+
+Параметров нет.
 
 ### create_part
 

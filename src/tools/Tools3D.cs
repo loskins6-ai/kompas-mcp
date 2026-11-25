@@ -36,6 +36,7 @@ namespace KompasMcp.Tools
 
     public static void Register()
     {
+      PartInspection.Register();
       ToolRegistry.Add("create_part",
         "Создать новую деталь (3D). Становится активной для остальных 3D-tools.",
         @"{""type"":""object"",""properties"":{
@@ -445,7 +446,7 @@ namespace KompasMcp.Tools
       return part;
     }
 
-    static IKompasDocument3D GetDoc7()
+    internal static IKompasDocument3D GetDoc7()
     {
       if (doc7 == null) throw new ToolException("Нет открытой детали");
       return doc7;
